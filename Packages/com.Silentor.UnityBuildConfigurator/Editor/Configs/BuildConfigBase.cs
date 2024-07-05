@@ -11,11 +11,11 @@ namespace Silentor.UnityBuildConfigurator.Editor.Configs
 {
     public abstract class BuildConfigBase : ScriptableObject
     {
+        public virtual String DisplayName => ObjectNames.NicifyVariableName( GetType().Name );
+
         public abstract void    CreateGUI ( VisualElement root );
         public abstract void SaveToJson( JObject       storage);
         public abstract void    LoadFromJson( JObject     storage );
-
-        public virtual String Name => ObjectNames.NicifyVariableName( GetType().Name );
 
         protected void SerializeMeToJObject( JObject storage )
         {

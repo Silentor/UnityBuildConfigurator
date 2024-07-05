@@ -64,7 +64,9 @@ namespace Silentor.UnityBuildConfigurator.Editor
 
         private void BuildBtnClicked( )
         {
-            
+            var defaultOptions = BuildPlayerWindow.DefaultBuildMethods.GetBuildPlayerOptions( new BuildPlayerOptions() );
+            Debug.Log( defaultOptions );
+            Debug.Log( PlayerSettings.accelerometerFrequency );
         }
 
         private void LoadBtnClicked( )
@@ -141,7 +143,7 @@ namespace Silentor.UnityBuildConfigurator.Editor
 
             var item    = _items[index];
             item.CreateGUI( content );
-            title.text = item.Name;
+            title.text = item.DisplayName;
         }
 
         private VisualElement ItemsListMakeItem( )
