@@ -1,0 +1,18 @@
+{
+    "name": "Silentor.UnityBuildConfigurator.Editor",
+    "rootNamespace": "Silentor.UnityBuildConfigurator",
+    "references": [],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Newtonsoft.Json.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

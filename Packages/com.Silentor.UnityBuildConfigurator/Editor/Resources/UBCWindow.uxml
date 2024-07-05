@@ -1,0 +1,16 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <uie:Toolbar name="FileToolbar">
+        <uie:ToolbarButton text="New" parse-escape-sequences="true" display-tooltip-when-elided="true" name="NewBtn" />
+        <uie:ToolbarButton text="Load" parse-escape-sequences="true" display-tooltip-when-elided="true" name="LoadBtn" />
+        <uie:ToolbarButton text="Save" parse-escape-sequences="true" display-tooltip-when-elided="true" name="SaveBtn" />
+        <uie:ToolbarButton text="Clone" parse-escape-sequences="true" display-tooltip-when-elided="true" name="CloneBtn" />
+        <uie:ToolbarButton text="Delete&#10;" parse-escape-sequences="true" display-tooltip-when-elided="true" name="DeleteBtn" />
+        <uie:ToolbarMenu tabindex="-1" parse-escape-sequences="true" display-tooltip-when-elided="true" text="Configs" name="ConfigsList" style="min-width: 200px;" />
+        <uie:ToolbarButton text="Build" parse-escape-sequences="true" display-tooltip-when-elided="true" name="BuildBtn" />
+    </uie:Toolbar>
+    <ui:ListView name="ItemsList" virtualization-method="DynamicHeight" />
+    <uie:Toolbar name="ItemsToolbar">
+        <uie:ToolbarMenu tabindex="-1" parse-escape-sequences="true" display-tooltip-when-elided="true" text="Add item" name="AddItemMn" />
+        <uie:ToolbarButton text="RemoveItem" parse-escape-sequences="true" display-tooltip-when-elided="true" name="RemoveItemBtn" />
+    </uie:Toolbar>
+</ui:UXML>
