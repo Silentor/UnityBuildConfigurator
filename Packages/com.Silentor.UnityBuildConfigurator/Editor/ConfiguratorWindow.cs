@@ -22,6 +22,7 @@ namespace Silentor.UnityBuildConfigurator.Editor
 
         private String _fileName;
         private Button _loadBtn;
+        private Button _buildBtn;
 
         [UnityEditor.MenuItem( "Test/Build Configurator" )]
         private static void ShowWindow( )
@@ -55,7 +56,15 @@ namespace Silentor.UnityBuildConfigurator.Editor
                   _addItemMn.menu.AppendAction( itemType.Name, AddItemSelected, (_) => DropdownMenuAction.Status.Normal, itemType );
               }
 
+              _buildBtn = content.Q<Button>( "BuildBtn" );
+              _buildBtn.clicked += BuildBtnClicked;
+
               root.Add( content );
+        }
+
+        private void BuildBtnClicked( )
+        {
+            
         }
 
         private void LoadBtnClicked( )

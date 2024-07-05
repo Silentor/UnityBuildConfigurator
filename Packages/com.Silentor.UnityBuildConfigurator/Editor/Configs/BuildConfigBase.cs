@@ -24,12 +24,12 @@ namespace Silentor.UnityBuildConfigurator.Editor.Configs
                                    ContractResolver = new UnityStyleSerializationResolver()
                            };
             var result = JsonConvert.SerializeObject( this, settings );
-            storage[ "content" ] = JObject.Parse( result );
+            storage[ "__content" ] = JObject.Parse( result );
         }
 
         protected void DeserializeMeFromJObject( JObject storage )
         {
-            var str = storage[ "content" ].ToString();
+            var str = storage[ "__content" ].ToString();
             JsonConvert.PopulateObject( str, this );
         }
 
