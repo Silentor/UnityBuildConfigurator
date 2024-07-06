@@ -9,13 +9,16 @@ using UnityEngine.UIElements;
 
 namespace Silentor.UnityBuildConfigurator.Editor.Configs
 {
-    public abstract class BuildConfigBase : ScriptableObject
+    public abstract class BuildConfigItemBase : ScriptableObject
     {
         public virtual String DisplayName => ObjectNames.NicifyVariableName( GetType().Name );
 
         public abstract void    CreateGUI ( VisualElement root );
         public abstract void SaveToJson( JObject       storage);
         public abstract void    LoadFromJson( JObject     storage );
+
+        public abstract void ApplyConfig( ref BuildPlayerOptions options );
+        public abstract void RevertConfig( );
 
         protected void SerializeMeToJObject( JObject storage )
         {

@@ -15,7 +15,7 @@ namespace Silentor.UnityBuildConfigurator.Editor
     public class ConfiguratorWindow : UnityEditor.EditorWindow
     {
         private ListView              _itemsList;
-        private List<BuildConfigBase> _items = new();
+        private List<BuildConfigItemBase> _items = new();
         private ToolbarMenu           _addItemMn;
         private Type[]                _itemTypes;
         private Button                _saveBtn;
@@ -50,7 +50,7 @@ namespace Silentor.UnityBuildConfigurator.Editor
               _loadBtn.clicked += LoadBtnClicked;
 
               _addItemMn = content.Q<ToolbarMenu>( "AddItemMn" );
-              _itemTypes = TypeCache.GetTypesDerivedFrom<BuildConfigBase>(  ).Where( t => !t.IsAbstract ).OrderBy( t => t.Name ).ToArray();
+              _itemTypes = TypeCache.GetTypesDerivedFrom<BuildConfigItemBase>(  ).Where( t => !t.IsAbstract ).OrderBy( t => t.Name ).ToArray();
               foreach ( var itemType in _itemTypes )
               {
                   _addItemMn.menu.AppendAction( itemType.Name, AddItemSelected, (_) => DropdownMenuAction.Status.Normal, itemType );
@@ -64,9 +64,18 @@ namespace Silentor.UnityBuildConfigurator.Editor
 
         private void BuildBtnClicked( )
         {
-            var defaultOptions = BuildPlayerWindow.DefaultBuildMethods.GetBuildPlayerOptions( new BuildPlayerOptions() );
-            Debug.Log( defaultOptions );
-            Debug.Log( PlayerSettings.accelerometerFrequency );
+            var options = new BuildPlayerOptions();
+
+            foreach ( var configItem in _items )
+            {
+                configItem.ApplyConfig( ref options );
+            }
+
+            var report = BuildPipeline.BuildPlayer( options );
+            Debug.Log( report.summary.result );
+
+            //var report = BuildPipeline.BuildPlayer( defaultOptions );
+            //Debug.Log( report );
         }
 
         private void LoadBtnClicked( )
@@ -84,11 +93,11 @@ namespace Silentor.UnityBuildConfigurator.Editor
             var storage  = JObject.Parse( str );
             var items    = storage[ "items" ];
 
-            var loadedItems = new List<BuildConfigBase>();
+            var loadedItems = new List<BuildConfigItemBase>();
             foreach ( JObject jItem in items )
             {
                 var type     = Type.GetType( jItem[ "__type" ].ToString() );
-                var instance = (BuildConfigBase)ScriptableObject.CreateInstance( type );
+                var instance = (BuildConfigItemBase)ScriptableObject.CreateInstance( type );
                 instance.LoadFromJson( jItem );
                 loadedItems.Add( instance );
             }
@@ -131,7 +140,7 @@ namespace Silentor.UnityBuildConfigurator.Editor
         {
             var type     = (Type)a.userData;
             //var instance = (BuildConfigBase)Activator.CreateInstance( type );
-            var instance = (BuildConfigBase)ScriptableObject.CreateInstance( type );
+            var instance = (BuildConfigItemBase)ScriptableObject.CreateInstance( type );
             _items.Add( instance );
             _itemsList.Rebuild();
         }

@@ -1,15 +1,27 @@
 ﻿using System;
+using System.Linq;
 using Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.UIElements;
+using Object = System.Object;
 
 namespace Silentor.UnityBuildConfigurator.Editor.Configs
 {
-    public class UnityDebugLog : BuildConfigItemBase
+    public class BuildSettings : BuildConfigItemBase
     {
-        public String LogString = "Some log during build";
+        public BuildTarget BuildTarget ;
+        public String      BuildPath;
+        public String[]    Scenes;
+
+        private void OnEnable( )
+        {
+            BuildTarget = EditorUserBuildSettings.activeBuildTarget;
+            BuildPath   = EditorUserBuildSettings.GetBuildLocation( BuildTarget );
+            Scenes = EditorBuildSettings.scenes.Select( s => s.path ).ToArray();
+        }
 
         public override void CreateGUI(VisualElement root )
         {
@@ -29,7 +41,9 @@ namespace Silentor.UnityBuildConfigurator.Editor.Configs
 
         public override void ApplyConfig( ref BuildPlayerOptions options )
         {
-            Debug.Log( LogString );
+             options.target           = BuildTarget;
+             options.locationPathName = BuildPath;
+             options.scenes           = Scenes;
         }
 
         public override void RevertConfig( )
