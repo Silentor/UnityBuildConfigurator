@@ -16,24 +16,20 @@ namespace Silentor.UnityBuildConfigurator.Editor
 {
     public class ConfiguratorWindow : EditorWindow
     {
-        private ListView    _itemsList;
-        private Button      _saveBtn;
-        private ToolbarMenu _addItemMn;
-        private Button      _loadBtn;
-        private Button      _buildBtn;
-        private ToolbarMenu _configsListMn;
-
+        private ListView      _itemsList;
+        private Button        _saveBtn;
+        private ToolbarMenu   _addItemMn;
+        private Button        _loadBtn;
+        private Button        _buildBtn;
+        private ToolbarMenu   _configsListMn;
+        private Button        _cloneBtn;
+        private Button        _deleteBtn;
+        private Button        _newBtn;
+        private ToolbarButton _removeItemBtn;
 
         private Config       _config;
         private Type[]       _itemTypes;
-        private List<String> _configsList = new();
-
-        private String      _fileName;
-        
-        private Settings _settings;
-        private string   _activeConfig;
-        private Button   _cloneBtn;
-
+        private Settings     _settings;
 
         [MenuItem( "Test/Build Configurator" )]
         private static void ShowWindow( )
@@ -50,7 +46,7 @@ namespace Silentor.UnityBuildConfigurator.Editor
             _itemTypes = TypeCache.GetTypesDerivedFrom<BuildConfigItemBase>(  ).Where( t => !t.IsAbstract ).OrderBy( t => t.Name )
                                   .ToArray();
             _settings = new Settings();
-            _config   = new Config( null, Array.Empty<BuildConfigItemBase>() );
+            _config   = new Config( null, new List<BuildConfigItemBase> { CreateInstance<BuildSettings>() } );
 
             //Sanitize configs list
             var configs = _settings.ConfigsList.ToList();
@@ -69,6 +65,9 @@ namespace Silentor.UnityBuildConfigurator.Editor
                 if( configs.Any() )
                     activeConfig = configs[ 0 ];
             }
+
+            if( String.IsNullOrEmpty( activeConfig ) && configs.Any() )
+                activeConfig = configs[ 0 ];
             _settings.ActiveConfig = activeConfig;
 
             //Load last config
@@ -109,6 +108,8 @@ namespace Silentor.UnityBuildConfigurator.Editor
             _itemsList             = content.Q<ListView>( "ItemsList" );
             _itemsList.makeItem    = ItemsListMakeItem;
             _itemsList.bindItem    = ItemsListBindItem;
+            _itemsList.unbindItem  = ItemsListUnbindItem;
+            _itemsList.selectedIndicesChanged += ( _ ) => RefreshWidgets();
 
             _saveBtn         =  content.Q<Button>( "SaveBtn" );
             _saveBtn.clicked += SaveBtnClicked;
@@ -124,14 +125,69 @@ namespace Silentor.UnityBuildConfigurator.Editor
             foreach ( var itemType in _itemTypes )
                 _addItemMn.menu.AppendAction( itemType.Name, AddItemSelected, (_) => DropdownMenuAction.Status.Normal, itemType );
 
+            _removeItemBtn = content.Q<ToolbarButton>( "RemoveItemBtn" );
+            _removeItemBtn.clicked += RemoveItemBtnClicked;
+
             _buildBtn         =  content.Q<Button>( "BuildBtn" );
             _buildBtn.clicked += BuildBtnClicked;
+
+            _deleteBtn = content.Q<Button>( "DeleteBtn" );
+            _deleteBtn.clicked += DeleteBtnClicked;
+
+            _newBtn = content.Q<Button>( "NewBtn" );
+            _newBtn.clicked += NewBtnClicked;
 
             _configsListMn = content.Q<ToolbarMenu>( "ConfigsList" );
 
             root.Add( content );
 
             RefreshWidgets();
+        }
+
+        
+
+
+        private void NewBtnClicked( )
+        {
+            if( _config.Path == null )
+                return;
+
+            SaveCurrentConfig();
+
+            _config = new Config( null, new List<BuildConfigItemBase> { CreateInstance<BuildSettings>() } );
+
+            RefreshWidgets();
+        }
+
+        private void DeleteBtnClicked( )
+        {
+            if( _config.Path == null )
+                return;
+
+            if ( EditorUtility.DisplayDialog( "Delete config", $"Do you want to delete config {_config.Path}?", "Yes", "Cancel" ) )
+            {
+                var currentConfigIndex = _settings.ConfigsList.ToList().IndexOf( _config.Path );
+                if( currentConfigIndex < 0 )
+                    return;
+
+                var deletedConfig     = _config;
+                var deletedConfigPath = deletedConfig.Path;
+                var configsList       = _settings.ConfigsList.ToList();
+                if ( _settings.ConfigsList.Count > 1 )
+                {
+                    if ( _config.Path == _settings.ConfigsList.Last() )
+                        SwitchConfig( _settings.ConfigsList[ currentConfigIndex - 1 ] );
+                    else
+                        SwitchConfig( _settings.ConfigsList[ currentConfigIndex + 1 ] );
+                }
+
+                File.Delete( deletedConfigPath );
+                AssetDatabase.Refresh();
+                configsList.RemoveAt( currentConfigIndex );
+                _settings.ConfigsList = configsList;
+
+                RefreshWidgets();
+            }
         }
 
         private void CloneBtnClicked( )
@@ -152,18 +208,39 @@ namespace Silentor.UnityBuildConfigurator.Editor
                 return;
             }
 
+            SaveCurrentConfig();
+            if( _config.Path == null )
+            {
+                EditorUtility.DisplayDialog( "Error", "Please save config before build", "Ok" );
+                return;
+            }
+
             var options = new BuildPlayerOptions();
 
             foreach ( var configItem in _config.Items ) 
                 configItem.ApplyConfig( ref options );
 
-            var report = BuildPipeline.BuildPlayer( options );
-            Debug.Log( $"Build result {report.summary.result}, items {String.Join( ", ", _config.Items )}" );
-            //_itemsList.RefreshItems();
+            try
+            {
+                var report = BuildPipeline.BuildPlayer( options );
+                var result = report.summary.result;
+                var outputPath = report.summary.outputPath;
+                var builtTime = report.summary.totalTime;
+                var platform = report.summary.platform;
+                var buildSize = report.summary.totalSize;
+                var errors = (report.summary.totalErrors, report.summary.totalWarnings);
+                Debug.Log( $"Build result {result}, path {outputPath}, platform {platform}, errors/warnings {errors.totalErrors}/{errors.totalWarnings}, size {EditorUtility.FormatBytes((long)buildSize)}, build time {builtTime.Minutes} m {builtTime.Seconds} s " );
+            }
+            finally
+            {
+                var reverseItems = _config.Items.ToList();
+                reverseItems.Reverse();
+                foreach ( var configItem in reverseItems ) 
+                    configItem.RevertConfig( );
+            }
 
-
-            //var report = BuildPipeline.BuildPlayer( defaultOptions );
-            //Debug.Log( report );
+            LoadConfig( _config.Path );
+            RefreshWidgets( true );
         }
 
         private void LoadBtnClicked( )
@@ -189,10 +266,20 @@ namespace Silentor.UnityBuildConfigurator.Editor
         private void AddItemSelected(DropdownMenuAction a )
         {
             var type     = (Type)a.userData;
-            //var instance = (BuildConfigBase)Activator.CreateInstance( type );
             var instance = (BuildConfigItemBase)CreateInstance( type );
             _config.Items.Add( instance );
-            _itemsList.Rebuild();
+
+            RefreshWidgets( true );
+        }
+
+        private void RemoveItemBtnClicked( )
+        {
+            if( _itemsList.selectedIndex < 0 )
+                return;
+
+            _config.Items.RemoveAt( _itemsList.selectedIndex );
+
+            RefreshWidgets( true );
         }
 
         private void ItemsListBindItem( VisualElement elem, Int32 index )
@@ -202,10 +289,22 @@ namespace Silentor.UnityBuildConfigurator.Editor
 
             var item    = _config.Items[ index ];
 
-            Debug.Log( $"Binding item {item}..." );
-
             item.CreateGUI( content );
             title.text = item.DisplayName;
+        }       
+
+        private void ItemsListUnbindItem(VisualElement elem, Int32 index )
+        {
+            var content = elem.Q<VisualElement>( "Content" );
+            
+            foreach ( var child in content.Children().ToArray() )
+            {
+                //Some internal knowledge about GroupBox
+                if ( !child.ClassListContains( GroupBox.labelUssClassName ) )
+                {
+                    content.Remove( child );
+                } 
+            }
         }
 
         private VisualElement ItemsListMakeItem( )
@@ -263,6 +362,8 @@ namespace Silentor.UnityBuildConfigurator.Editor
                 Directory.CreateDirectory( dir );
             File.WriteAllText( config.Path, storage.ToString() );
 
+            AssetDatabase.Refresh();
+
             if ( !_settings.ConfigsList.Contains( config.Path ) )
                 _settings.ConfigsList = _settings.ConfigsList.Append( config.Path ).ToList();
             _settings.ActiveConfig = config.Path;
@@ -289,12 +390,15 @@ namespace Silentor.UnityBuildConfigurator.Editor
             return File.Exists( path );
         }
 
-        private void RefreshWidgets( )
+        private void RefreshWidgets( Boolean rebuildItemsList = false )
         {
-            _buildBtn.SetEnabled( _config.Items.Count > 0 );
+            _buildBtn.SetEnabled( _config.Items.Count > 0 && _config.Path != null );
             _cloneBtn.SetEnabled( _config.Path != null );
+            _newBtn.SetEnabled( _config.Path != null );
+            _deleteBtn.SetEnabled( _config.Path != null );
+            _removeItemBtn.SetEnabled( _itemsList.selectedIndex >= 0 );
 
-            if ( _itemsList.itemsSource != _config.Items )
+            if ( _itemsList.itemsSource != _config.Items || rebuildItemsList )
             {
                 _itemsList.itemsSource = _config.Items;
                 _itemsList.Rebuild();
