@@ -6,6 +6,7 @@ using Newtonsoft.Json.Serialization;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Object = System.Object;
 
 namespace Silentor.UnityBuildConfigurator.Editor.Configs
 {
@@ -35,6 +36,22 @@ namespace Silentor.UnityBuildConfigurator.Editor.Configs
             var str = storage[ "__content" ].ToString();
             JsonConvert.PopulateObject( str, this );
         }
+
+        protected BuildOptions SetFlag( BuildOptions options, BuildOptions flag )
+        {
+            return options | flag;
+        }
+
+        protected BuildOptions ClearFlag( BuildOptions options, BuildOptions flag )
+        {
+            return options & ~flag;
+        }
+
+        protected BuildOptions SwitchFlag( BuildOptions options, BuildOptions flag, Boolean value )
+        {
+            return value ? SetFlag( options, flag ) : ClearFlag( options, flag );
+        }
+        
 
         private class UnityStyleSerializationResolver : DefaultContractResolver
         {

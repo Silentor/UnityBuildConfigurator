@@ -8,6 +8,13 @@
         "com.unity.nuget.newtonsoft-json": "3.2.0"
       }
     },
+    "com.unity.build-report-inspector": {
+      "version": "0.3.0-preview",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
     "com.unity.ext.nunit": {
       "version": "1.0.6",
       "depth": 1,

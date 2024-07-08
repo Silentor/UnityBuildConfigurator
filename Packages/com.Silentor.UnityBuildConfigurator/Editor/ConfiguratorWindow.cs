@@ -230,6 +230,7 @@ namespace Silentor.UnityBuildConfigurator.Editor
                 var buildSize = report.summary.totalSize;
                 var errors = (report.summary.totalErrors, report.summary.totalWarnings);
                 Debug.Log( $"Build result {result}, path {outputPath}, platform {platform}, errors/warnings {errors.totalErrors}/{errors.totalWarnings}, size {EditorUtility.FormatBytes((long)buildSize)}, build time {builtTime.Minutes} m {builtTime.Seconds} s " );
+                Debug.Log( $"Build options {report.summary.options} " );
             }
             finally
             {
